@@ -2,29 +2,33 @@ package com.myproject;
 
 import org.apache.poi.ss.usermodel.*;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 public class ExcelParser {
 
-    public List<String[]> parse(InputStream inputStream) throws Exception {
-
-        List<String[]> rows = new ArrayList<>();
+    public List<Map<String, String>> parse(InputStream inputStream) throws Exception {
+        List<Map<String, String>> rows = new ArrayList<>();
 
         Workbook workbook = WorkbookFactory.create(inputStream);
         Sheet sheet = workbook.getSheetAt(0);
 
-        // İlk satır başlık, atla
-        boolean ilkSatir = true;
+        Iterator<Row> rowIterator = sheet.iterator();
+        if (!rowIterator.hasNext()) return rows;
 
-        for (Row row : sheet) {
-            if (ilkSatir) { ilkSatir = false; continue; }
+        Row headerRow = rowIterator.next();
+        List<String> headers = new ArrayList<>();
+        for (Cell cell : headerRow) {
+            headers.add(cell.toString().trim());
+        }
 
-            List<String> cells = new ArrayList<>();
-            for (Cell cell : row) {
-                cells.add(cell.toString());
+        while (rowIterator.hasNext()) {
+            Row row = rowIterator.next();
+            Map<String, String> rowMap = new LinkedHashMap<>();
+            for (int i = 0; i < headers.size(); i++) {
+                Cell cell = row.getCell(i);
+                rowMap.put(headers.get(i), cell != null ? cell.toString() : "");
             }
-            rows.add(cells.toArray(new String[0]));
+            rows.add(rowMap);
         }
 
         workbook.close();
